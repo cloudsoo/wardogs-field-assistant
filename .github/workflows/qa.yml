@@ -17,6 +17,7 @@ jobs:
         run: |
           node --check app.js
           node --check app-v11.js
+          node --check tests/live-smoke.cjs
       - name: Validate V11 wiring and startup language
         run: |
           node - <<'NODE'
@@ -44,9 +45,15 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
           node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
-      - name: Live worker smoke test
+      - name: Live worker shell smoke test
         run: |
           curl -fsSL --retry 3 https://wardogs-field-assistant2.cloudsoo2004.workers.dev/ -o /tmp/live.html
           grep -q 'app.js' /tmp/live.html
           grep -q 'WARDOGS FIELD ASSISTANT' /tmp/live.html
           echo 'Live worker shell PASS'
+      - name: Browser E2E on deployed worker
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          node tests/live-smoke.cjs
