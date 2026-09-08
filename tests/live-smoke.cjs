@@ -41,17 +41,17 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   await page.locator('#coordGo').click();
   await page.waitForFunction(()=>Math.abs(window.Wardogs11.target?.x-88.40)<0.001 && Math.abs(window.Wardogs11.target?.y-66.20)<0.001,'coordinate jump did not set Target');
 
-  const before=await page.locator('.v12-tower-marker').first().boundingBox();
+  const before=await page.locator('.v12-tower-wrap img').first().boundingBox();
   for(let i=0;i<12;i++)await page.locator('#zoomIn').click();
   await page.waitForFunction(()=>window.Wardogs11.map?.getZoom()>=7,'map did not reach max zoom');
   await page.waitForFunction(()=>document.querySelectorAll('img.leaflet-tile').length>0,'tiles disappeared at high zoom');
   await page.waitForTimeout(250);
-  const after=await page.locator('.v12-tower-marker').first().boundingBox();
-  assert.ok(before&&after,'tower marker box missing');
-  assert.ok(after.width < before.width,'tower marker did not shrink after zoom');
-  assert.ok(after.width<=12,'tower logo can still be smaller at max zoom');
+  const after=await page.locator('.v12-tower-wrap img').first().boundingBox();
+  assert.ok(before&&after,'tower logo box missing');
+  assert.ok(after.width < before.width,'tower logo did not shrink after zoom');
+  assert.ok(after.width<=10,'tower logo is not small enough at max zoom');
 
   assert.deepEqual(errors,[],'browser page errors were reported');
-  console.log('LIVE E2E PASS: startup Chinese, centered map, HD tiles through max zoom, coordinate jump, tower scaling');
+  console.log('LIVE E2E PASS: startup Chinese, centered map, HD tiles through max zoom, coordinate jump, compact tower scaling');
   await browser.close();
 })().catch(err=>{console.error(err.stack||err);process.exit(1)});
