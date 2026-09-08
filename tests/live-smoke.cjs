@@ -21,7 +21,15 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   await page.locator('#nav2').click();
   await page.waitForFunction(()=>window.Wardogs11?.map && window.L,'map engine did not initialize');
   await page.waitForFunction(()=>document.querySelectorAll('img.leaflet-tile').length>0,'map tiles did not load');
-  await page.waitForFunction(()=>document.querySelectorAll('.v11-tower-marker').length>0,'tower markers did not load');
+  await page.waitForFunction(()=>document.querySelectorAll('.v12-tower-marker').length>0,'v12 tower markers did not load');
+
+  const mapBox=await page.locator('#map').boundingBox();
+  const towerBox=await page.locator('.v12-tower-marker').first().boundingBox();
+  assert.ok(mapBox&&towerBox,'map/tower bounds missing');
+  const towerCx=towerBox.x+towerBox.width/2;
+  const towerCy=towerBox.y+towerBox.height/2;
+  assert.ok(towerCx>mapBox.x+mapBox.width*.12&&towerCx<mapBox.x+mapBox.width*.88,'tower marker is stuck at map left/top edge');
+  assert.ok(towerCy>mapBox.y+mapBox.height*.12&&towerCy<mapBox.y+mapBox.height*.88,'tower marker is stuck at map left/top edge');
 
   await page.locator('#setGun').click();
   await page.locator('#coordJump').fill('84.25, 62.10');
@@ -33,15 +41,17 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   await page.locator('#coordGo').click();
   await page.waitForFunction(()=>Math.abs(window.Wardogs11.target?.x-88.40)<0.001 && Math.abs(window.Wardogs11.target?.y-66.20)<0.001,'coordinate jump did not set Target');
 
-  const before=await page.locator('.v11-tower-marker').first().boundingBox();
-  await page.locator('#zoomIn').click();
-  await page.locator('#zoomIn').click();
+  const before=await page.locator('.v12-tower-marker').first().boundingBox();
+  for(let i=0;i<12;i++)await page.locator('#zoomIn').click();
+  await page.waitForFunction(()=>window.Wardogs11.map?.getZoom()>=7,'map did not reach max zoom');
+  await page.waitForFunction(()=>document.querySelectorAll('img.leaflet-tile').length>0,'tiles disappeared at high zoom');
   await page.waitForTimeout(250);
-  const after=await page.locator('.v11-tower-marker').first().boundingBox();
-  assert.ok(before && after,'tower marker box missing');
+  const after=await page.locator('.v12-tower-marker').first().boundingBox();
+  assert.ok(before&&after,'tower marker box missing');
   assert.ok(after.width < before.width,'tower marker did not shrink after zoom');
+  assert.ok(after.width<=12,'tower logo can still be smaller at max zoom');
 
   assert.deepEqual(errors,[],'browser page errors were reported');
-  console.log('LIVE E2E PASS: startup Chinese, Page 2 map, HD tiles, coordinate jump, tower scaling');
+  console.log('LIVE E2E PASS: startup Chinese, centered map, HD tiles through max zoom, coordinate jump, tower scaling');
   await browser.close();
 })().catch(err=>{console.error(err.stack||err);process.exit(1)});
