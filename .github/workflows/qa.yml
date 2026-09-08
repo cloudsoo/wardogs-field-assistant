@@ -15,23 +15,23 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json OK')"
       - name: Syntax check app.js
         run: node --check app.js
-      - name: Verify V4 shell
+      - name: Verify current V5 shell
         run: |
           node - <<'NODE'
           const fs=require('fs');
-          const html=fs.readFileSync('v4.html','utf8');
+          const html=fs.readFileSync('index.html','utf8');
           const js=fs.readFileSync('app.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
           const htmlReq=['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer="tower"','data-layer="facility"','data-layer="battle"','data-layer="grid"','app.js'];
-          const jsReq=['pointerdown','pointermove','pointerup','pinch','renderMapLayers','raw.githubusercontent.com','cdn.jsdelivr.net'];
+          const jsReq=['pointerdown','pointermove','pointerup','startDist','touch-action','renderTiles','currentTileZoom','towerQuick','selectTower','cdn.jsdelivr.net','raw.githubusercontent.com'];
           for(const s of htmlReq) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
           for(const s of jsReq) if(!js.includes(s)) throw new Error('Missing JS feature: '+s);
-          if(!sw.includes('v4.html')||!sw.includes('app.js')) throw new Error('Service worker is not on V4');
-          console.log('V4 shell checks passed');
+          if(!sw.includes('wardogs-field-v5')||!sw.includes('./app.js')) throw new Error('Service worker is not on V5');
+          console.log('V5 shell checks passed');
           NODE
-      - name: Check public map endpoints
+      - name: Check public high-resolution map endpoints
         run: |
-          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_2/0_0.webp
-          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_2/0_0.webp
+          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
+          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_7/0_0.webp
           curl -fsSL --retry 3 -o /tmp/weapons.json https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json
-          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Map tiles and firing table endpoints OK')"
+          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('High-resolution map tiles and firing tables reachable')"
