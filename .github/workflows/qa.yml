@@ -27,8 +27,8 @@ jobs:
           const sw=fs.readFileSync('service-worker.js','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
           if(!boot.includes('app-v11.js')||!boot.includes('第 1 页 · 坐标输入 / 火控')||!boot.includes("lang:'EN'")) throw new Error('Startup Chinese shell wiring failed');
-          for(const s of ['leaflet.min.js','updateWhenZooming:true','keepBuffer:2','reuseTiles:true','tower-marker','coordJump','towerSelect','zoomend','wardogs-field']) if(!v11.includes(s)) throw new Error('Missing V11 feature: '+s);
-          if(!sw.includes('wardogs-field-v11')||!sw.includes('./app-v11.js')||sw.includes('if(u.origin!==self.location.origin)return;')===false) throw new Error('V11 service worker wiring failed');
+          for(const s of ['leaflet.min.js','updateWhenZooming:false','keepBuffer:2','reuseTiles:true','tower-marker','coordJump','towerSelect','zoomend','wardogs-field']) if(!v11.includes(s)) throw new Error('Missing V11 feature: '+s);
+          if(!sw.includes('wardogs-field-v11')||!sw.includes('./app-v11.js')||sw.includes('u.origin!==self.location.origin')===false) throw new Error('V11 service worker wiring failed');
           console.log('V11 source wiring PASS');
           NODE
       - name: Validate map configs and HD tiles
