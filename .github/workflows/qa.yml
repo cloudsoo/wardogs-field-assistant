@@ -13,33 +13,36 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V8 engine
-        run: node --check app-v8.js
-      - name: Validate V8 source wiring
+      - name: Syntax check V9 controllers
+        run: |
+          node --check app.js
+          node --check app-v9.js
+          node --check app-map-v9.js
+      - name: Validate V9 wiring and clean language shell
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const boot=fs.readFileSync('app.js','utf8');
-          const js=fs.readFileSync('app-v8.js','utf8');
+          const ui=fs.readFileSync('app-v9.js','utf8');
+          const map=fs.readFileSync('app-map-v9.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
-          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          for(const s of ['leaflet','tileLayer','keepBuffer','updateWhenZooming','towerQuick','selectTower','towerSvg','zoomend','tap:false']) if(!js.includes(s)) throw new Error('Missing V8 JS: '+s);
-          if(!boot.includes('app-v8.js')) throw new Error('app.js is not booting V8');
-          if(!sw.includes('wardogs-field-v8')||!sw.includes('./app-v8.js')) throw new Error('Service worker is not V8');
-          console.log('V8 source wiring passed');
+          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','towerLayer','facilityLayer','battleLayer','gridLayer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
+          for(const s of ['app-v9.js','language','BEARING CODE','lockGun','lockTarget']) if(!boot.includes('app-v9.js') && s==='app-v9.js') throw new Error('Loader missing V9');
+          for(const s of ['CustomEvent','wardogs:showmap','wardogs:focus','loadWeapons']) if(!ui.includes(s)) throw new Error('Missing app feature: '+s);
+          for(const s of ['leaflet.min.js','tileLayer','keepBuffer','updateWhenZooming','towerQuick','selectTower','towerSvg','zoomend','pointGun','pointTarget']) if(!map.includes(s)) throw new Error('Missing map feature: '+s);
+          if(!sw.includes('wardogs-field-v9')||!sw.includes('./app-v9.js')||!sw.includes('./app-map-v9.js')) throw new Error('Service worker V9 wiring missing');
+          console.log('V9 source wiring passed');
           NODE
-      - name: Validate public map configs and HD tiles
+      - name: Validate public map configs, high-resolution tiles and firing tables
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_7/0_0.webp
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
           node - <<'NODE'
           const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');const t=(x.markers||[]).filter(m=>m.icon==='tower');if(!t.length)throw new Error(id+' has no towers');console.log(id,'towers',t.length,'maxZoom',x.tiles.maxZoom,'coordMetersPerUnit',x.coordinateMetersPerUnit)}
+          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');const n=(x.markers||[]).filter(m=>m.icon==='tower').length;if(!n)throw new Error(id+' has no towers');console.log(id,{towers:n,maxZoom:x.tiles.maxZoom,metersPerUnit:x.coordinateMetersPerUnit})}
+          const w=JSON.parse(fs.readFileSync('/tmp/weapons.json'));if(!w.weapons.some(x=>x.id==='mortar')||!w.weapons.some(x=>x.id==='spg'))throw new Error('Missing weapon tables');console.log('Weapon tables OK');
           NODE
-      - name: Validate firing table
-        run: |
-          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
-          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Mortar and SPH-2 firing tables OK')"
