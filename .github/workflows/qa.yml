@@ -13,24 +13,27 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V11
+      - name: Syntax check V12
         run: |
           node --check app.js
           node --check app-v11.js
+          node --check map-v12-fix.js
           node --check tests/live-smoke.cjs
-      - name: Validate V11 wiring and startup language
+      - name: Validate V12 wiring and startup language
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const boot=fs.readFileSync('app.js','utf8');
           const v11=fs.readFileSync('app-v11.js','utf8');
+          const v12=fs.readFileSync('map-v12-fix.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          if(!boot.includes('app-v11.js')||!boot.includes('第 1 页 · 坐标输入 / 火控')||!boot.includes("lang:'EN'")) throw new Error('Startup Chinese shell wiring failed');
+          if(!boot.includes('app-v11.js')||!boot.includes('map-v12-fix.js')||!boot.includes('第 1 页 · 坐标输入 / 火控')||!boot.includes("lang:'EN'")) throw new Error('Startup shell wiring failed');
           for(const s of ['leaflet.min.js','updateWhenZooming:false','keepBuffer:2','reuseTiles:true','tower-marker','coordJump','towerSelect','zoomend']) if(!v11.includes(s)) throw new Error('Missing V11 feature: '+s);
-          if(!sw.includes('wardogs-field-v11')||!sw.includes('./app-v11.js')||sw.includes('u.origin!==self.location.origin')===false) throw new Error('V11 service worker wiring failed');
-          console.log('V11 source wiring PASS');
+          for(const s of ['UNITS=163.84','L.CRS.Simple','maxZoom:MAX_ZOOM','bounds','fitBounds','invalidateSize','worldLatLng','v12-tower-marker']) if(!v12.includes(s)) throw new Error('Missing V12 map fix: '+s);
+          if(!sw.includes('wardogs-field-v12')||!sw.includes('./map-v12-fix.js')||sw.includes('u.origin!==self.location.origin')===false) throw new Error('V12 service worker wiring failed');
+          console.log('V12 source wiring PASS');
           NODE
       - name: Validate map configs and HD tiles
         run: |
@@ -39,7 +42,7 @@ jobs:
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
           node - <<'NODE'
           const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');console.log(id,'maxZoom',x.tiles.maxZoom,'markers',(x.markers||[]).length)}
+          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');if((x.tileBounds?.maxX??0)<163|| (x.tileBounds?.maxY??0)<163)throw new Error(id+' tile bounds are not full-size');console.log(id,'maxZoom',x.tiles.maxZoom,'markers',(x.markers||[]).length)}
           NODE
       - name: Validate firing tables
         run: |
