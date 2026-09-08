@@ -1,34 +1,33 @@
-# WARDOGS FIELD ASSISTANT V3
+# WARDOGS FIELD ASSISTANT
 
 Mobile-first PWA for WARDOGS coordinate and artillery assistance.
 
-## V3
-- Page 1: manual coordinate key-in + bearing code check
-- Page 2: interactive Bakurani/Ozeti map
-- Independent Gun/Target locks
+## V4
+- Page 1: clean key-in calculator + Bearing Code input
+- Page 2: Bakurani / Ozeti map
+- One-finger map pan
+- Two-finger pinch zoom on iPhone / Android
+- + / − zoom controls
+- Independent Gun / Target placement
+- Independent LOCK GUN / LOCK TARGET
 - Independent CLEAR GUN / CLEAR TARGET
-- Distance + bearing + direction
-- Mortar / SPH-2 selection
-- Firing-table MIL lookup from the published community data source, with range status
-- PWA manifest, app icon, service worker
+- POI layers: Towers, Major Buildings / Facilities, Major Battle Areas, 1 km Grid
+- POI icons and labels shrink as zoom increases
+- Page 2 coordinates sync back to Page 1
+- Mortar / SPH-2 firing-table lookup from the public MIT-licensed source project
 
-## Map / ballistics source
-Map tiles and firing tables are loaded from the public `apollyon-sys/wardogs-calculator` project. Its source code is MIT licensed. WARDOGS game assets remain property of their respective rights holders. See the source repository for its license/disclaimer.
-
-## Cloudflare Workers deployment
-This repository contains `wrangler.jsonc` for Workers Static Assets. Cloudflare's current recommended static-site path is Workers Static Assets rather than deprecated Workers Sites.
-
-Recommended build/deploy command when using Wrangler:
-`npx wrangler deploy`
-
-For a Git-connected Workers Build, connect the repository, use the `main` branch, and use the Wrangler deploy command. The `workers.dev` URL will point to the Worker named in `wrangler.jsonc`.
+## Deployment
+Use Cloudflare Workers Builds connected to this repository, or serve the static files from any HTTPS host.
 
 ## iPhone install
-1. Open the HTTPS `workers.dev` URL in Safari.
+1. Open the HTTPS site in Safari.
 2. Tap Share.
-3. Tap Add to Home Screen.
-4. Enable Open as Web App when shown.
+3. Choose Add to Home Screen.
+4. Choose Open as Web App when offered.
 5. Tap Add.
 
-## QA note
-The repository source has been reviewed for the requested V3 flow and map/ballistics wiring. Live iPhone Safari behavior and Cloudflare edge deployment still require a real-device/browser check because this environment cannot open the user's Cloudflare dashboard session or run a physical iPhone.
+## Map source
+Map configuration, POI data and tiles are loaded from the public `apollyon-sys/wardogs-calculator` project. Its source code is MIT licensed. WARDOGS game assets remain the property of their respective rights holders.
+
+## QA
+A GitHub Actions workflow validates the manifest, JavaScript syntax, V4 DOM wiring, and public map / firing-table endpoints on pushes to `main`.
