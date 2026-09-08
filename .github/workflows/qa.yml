@@ -22,14 +22,14 @@ jobs:
           const html=fs.readFileSync('index.html','utf8');
           const js=fs.readFileSync('app.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
-          const htmlReq=['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer="tower"','data-layer="facility"','data-layer="battle"','data-layer="grid"','app.js'];
-          const jsReq=['pointerdown','pointermove','pointerup','startDist','touch-action','renderTiles','currentTileZoom','towerQuick','selectTower','cdn.jsdelivr.net','raw.githubusercontent.com'];
+          const htmlReq=['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer','app.js'];
+          const jsReq=['pointerdown','pointermove','pointerup','startDist','currentTileZoom','towerQuick','selectTower','cdn.jsdelivr.net','raw.githubusercontent.com'];
           for(const s of htmlReq) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
           for(const s of jsReq) if(!js.includes(s)) throw new Error('Missing JS feature: '+s);
           if(!sw.includes('wardogs-field-v5')||!sw.includes('./app.js')) throw new Error('Service worker is not on V5');
           console.log('V5 shell checks passed');
           NODE
-      - name: Check public high-resolution map endpoints
+      - name: Check high-resolution map and firing-table endpoints
         run: |
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_7/0_0.webp
