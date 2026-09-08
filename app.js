@@ -7,10 +7,16 @@ const core=document.createElement('script');
 core.src='./app-v11.js';
 core.dataset.boot='wardogs-v11';
 core.onload=()=>{
-  const patch=document.createElement('script');
-  patch.src='./map-v13-fix.js';
-  patch.dataset.boot='wardogs-map-v13';
-  document.head.appendChild(patch);
+  const style=document.createElement('script');
+  style.src='./map-v13-style.js';
+  style.dataset.boot='wardogs-map-v13-style';
+  style.onload=()=>{
+    const patch=document.createElement('script');
+    patch.src='./map-v13-fix.js';
+    patch.dataset.boot='wardogs-map-v13';
+    document.head.appendChild(patch);
+  };
+  document.head.appendChild(style);
 };
 document.head.appendChild(core);
 })();
