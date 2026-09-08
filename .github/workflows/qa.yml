@@ -15,19 +15,17 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json OK')"
       - name: Syntax check app.js
         run: node --check app.js
-      - name: Verify current V5 shell wiring
+      - name: Verify V6 shell wiring
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const js=fs.readFileSync('app.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
-          const htmlReq=['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','app.js'];
-          const jsReq=['pointerdown','pointermove','pointerup','startDist','currentTileZoom','towerQuick','selectTower','cdn.jsdelivr.net','raw.githubusercontent.com'];
-          for(const s of htmlReq) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
-          for(const s of jsReq) if(!js.includes(s)) throw new Error('Missing JS feature: '+s);
-          if(!sw.includes('wardogs-field-v5')||!sw.includes('./app.js')) throw new Error('Service worker is not on V5');
-          console.log('V5 shell wiring passed');
+          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
+          for(const s of ['pointerdown','pointermove','pointerup','startDist','currentTileZoom','towerQuick','selectTower','cdn.jsdelivr.net','raw.githubusercontent.com','poiIcon']) if(!js.includes(s)) throw new Error('Missing JS feature: '+s);
+          if(!sw.includes('wardogs-field-v6')||!sw.includes('./app.js')) throw new Error('Service worker is not on V6');
+          console.log('V6 shell wiring passed');
           NODE
       - name: Check high-resolution map and firing-table endpoints
         run: |
