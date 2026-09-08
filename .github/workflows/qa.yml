@@ -12,20 +12,22 @@ jobs:
         with:
           node-version: 22
       - name: Validate manifest
-        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json OK')"
-      - name: Syntax check app.js
-        run: node --check app.js
-      - name: Verify V7 source wiring
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
+      - name: Syntax check V8 engine
+        run: node --check app-v8.js
+      - name: Validate V8 source wiring
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
-          const js=fs.readFileSync('app.js','utf8');
+          const boot=fs.readFileSync('app.js','utf8');
+          const js=fs.readFileSync('app-v8.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
-          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML feature: '+s);
-          for(const s of ['leaflet','tileLayer','keepBuffer','updateWhenZooming','towerQuick','selectTower','towerIcon','zoomend']) if(!js.includes(s)) throw new Error('Missing JS feature: '+s);
-          if(!sw.includes('wardogs-field-v7')||!sw.includes('./app.js')) throw new Error('Service worker is not on V7');
-          console.log('V7 source wiring passed');
+          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','data-layer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
+          for(const s of ['leaflet','tileLayer','keepBuffer','updateWhenZooming','towerQuick','selectTower','towerSvg','zoomend','tap:false']) if(!js.includes(s)) throw new Error('Missing V8 JS: '+s);
+          if(!boot.includes('app-v8.js')) throw new Error('app.js is not booting V8');
+          if(!sw.includes('wardogs-field-v8')||!sw.includes('./app-v8.js')) throw new Error('Service worker is not V8');
+          console.log('V8 source wiring passed');
           NODE
       - name: Validate public map configs and HD tiles
         run: |
@@ -35,9 +37,9 @@ jobs:
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_7/0_0.webp
           node - <<'NODE'
           const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if(!x.tiles||x.tiles.maxZoom<7)throw new Error(id+' maxZoom < 7');const towers=(x.markers||[]).filter(m=>m.icon==='tower');if(!towers.length)throw new Error(id+' has no towers');console.log(id,'towers',towers.length,'maxZoom',x.tiles.maxZoom)}
+          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');const t=(x.markers||[]).filter(m=>m.icon==='tower');if(!t.length)throw new Error(id+' has no towers');console.log(id,'towers',t.length,'maxZoom',x.tiles.maxZoom,'coordMetersPerUnit',x.coordinateMetersPerUnit)}
           NODE
       - name: Validate firing table
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
-          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Mortar and SPH-2 firing tables reachable')"
+          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Mortar and SPH-2 firing tables OK')"
