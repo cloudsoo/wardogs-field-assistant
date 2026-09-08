@@ -1,9 +1,15 @@
 {
   "name": "WARDOGS Field Assistant",
   "short_name": "WARDOGS",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
-  "description": "Tactical map and artillery calculator"
+  "orientation": "portrait",
+  "background_color": "#080c11",
+  "theme_color": "#080c11",
+  "description": "WARDOGS tactical map and point-to-point coordinate calculator",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
 }
