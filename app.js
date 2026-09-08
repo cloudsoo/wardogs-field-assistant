@@ -1,1 +1,1 @@
-(()=>{const s=document.createElement('script');s.src='./app-v8.js';s.defer=true;s.dataset.boot='wardogs-v8';document.head.appendChild(s)})();
+(()=>{const s=document.createElement('script');s.src='./app-v9.js';s.defer=true;s.dataset.boot='wardogs-v9';document.head.appendChild(s)})();
