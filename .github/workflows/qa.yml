@@ -13,7 +13,7 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check app controllers
+      - name: Syntax check controllers
         run: |
           node --check app.js
           node --check app-v9.js
@@ -30,23 +30,23 @@ jobs:
           const map=fs.readFileSync('app-map-v10.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','towerLayer','facilityLayer','battleLayer','gridLayer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          if(!boot.includes('app-v9.js')) throw new Error('app.js loader is wrong');
-          if(!ui.includes('app-map-v9.js')) throw new Error('app-v9 bridge is wrong');
-          if(!bridge.includes('app-map-v10.js')) throw new Error('map bridge is wrong');
-          for(const s of ['leaflet.min.js','keepBuffer:1','updateWhenZooming:false','reuseTiles:true','two fingers','towerQuick','setTower','tileLayer','zoomend']) if(!map.includes(s)) throw new Error('Missing V10 map feature: '+s);
-          if(!sw.includes('wardogs-field-v10')||!sw.includes('./app-map-v10.js')) throw new Error('Service worker V10 wiring missing');
-          console.log('V10 source wiring passed');
+          if(!boot.includes('app-v9.js')) throw new Error('Bad loader');
+          if(!ui.includes('app-map-v9.js')) throw new Error('Bad UI bridge');
+          if(!bridge.includes('app-map-v10.js')) throw new Error('Bad map bridge');
+          for(const s of ['leaflet.min.js','keepBuffer:1','updateWhenZooming:false','reuseTiles:true','towerQuick','setTower','tileLayer','zoomend','tap:false']) if(!map.includes(s)) throw new Error('Missing map feature: '+s);
+          if(!sw.includes('wardogs-field-v10')||!sw.includes('./app-map-v10.js')) throw new Error('Bad SW wiring');
+          console.log('V10 wiring PASS');
           NODE
-      - name: Validate map configs and highest-resolution Bakurani tile
+      - name: Validate map configs and high-resolution Bakurani tile
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
           node - <<'NODE'
           const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');const n=(x.markers||[]).filter(m=>m.icon==='tower').length;if(!n)throw new Error(id+' has no towers');console.log(id,{maxZoom:x.tiles.maxZoom,towers:n,metersPerUnit:x.coordinateMetersPerUnit||null})}
+          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');const n=(x.markers||[]).filter(m=>m.icon==='tower').length;if(!n)throw new Error(id+' no towers');console.log(id,'maxZoom',x.tiles.maxZoom,'towers',n,'metersPerUnit',x.coordinateMetersPerUnit??'n/a')}
           NODE
       - name: Validate firing tables
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
-          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Mortar and SPH-2 firing tables OK')"
+          node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
