@@ -1,0 +1,34 @@
+name: Wardogs V3 QA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json OK')"
+      - name: Validate HTML and embedded JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','distance','bearing','direction','mil','arc']
+          missing=[x for x in required if x not in s]
+          assert not missing, 'Missing: '+', '.join(missing)
+          scripts=re.findall(r'<script>(.*?)</script>',s,re.S)
+          assert scripts, 'No inline script found'
+          Path('/tmp/app.js').write_text('\n'.join(scripts),encoding='utf-8')
+          print('HTML feature markers OK')
+          PY
+          node --check /tmp/app.js
+      - name: Verify map and firing-table endpoints
+        run: |
+          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_1/0_0.webp
+          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/ozeti/zoom_1/0_0.webp
+          curl -fsSL --retry 3 -o /tmp/weapons.json https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/data/weapons.json
+          node -e "const x=require('/tmp/weapons.json'); if(!x.weapons.some(w=>w.id==='mortar')) process.exit(1); if(!x.weapons.some(w=>w.id==='spg')) process.exit(1); console.log('Map tiles and firing table endpoints OK')"
