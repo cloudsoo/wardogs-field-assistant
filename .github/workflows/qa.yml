@@ -13,40 +13,40 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check controllers
+      - name: Syntax check V11
         run: |
           node --check app.js
-          node --check app-v9.js
-          node --check app-map-v9.js
-          node --check app-map-v10.js
-      - name: Validate V10 source wiring
+          node --check app-v11.js
+      - name: Validate V11 wiring and startup language
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const boot=fs.readFileSync('app.js','utf8');
-          const ui=fs.readFileSync('app-v9.js','utf8');
-          const bridge=fs.readFileSync('app-map-v9.js','utf8');
-          const map=fs.readFileSync('app-map-v10.js','utf8');
+          const v11=fs.readFileSync('app-v11.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
-          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','clearGun','clearTarget','towerLayer','facilityLayer','battleLayer','gridLayer','app.js']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          if(!boot.includes('app-v9.js')) throw new Error('Bad loader');
-          if(!ui.includes('app-map-v9.js')) throw new Error('Bad UI bridge');
-          if(!bridge.includes('app-map-v10.js')) throw new Error('Bad map bridge');
-          for(const s of ['leaflet.min.js','keepBuffer:1','updateWhenZooming:false','reuseTiles:true','towerQuick','setTower','tileLayer','zoomend','tap:false']) if(!map.includes(s)) throw new Error('Missing map feature: '+s);
-          if(!sw.includes('wardogs-field-v10')||!sw.includes('./app-map-v10.js')) throw new Error('Bad SW wiring');
-          console.log('V10 wiring PASS');
+          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
+          if(!boot.includes('app-v11.js')||!boot.includes('第 1 页 · 坐标输入 / 火控')||!boot.includes("lang:'EN'")) throw new Error('Startup Chinese shell wiring failed');
+          for(const s of ['leaflet.min.js','updateWhenZooming:true','keepBuffer:2','reuseTiles:true','tower-marker','coordJump','towerSelect','zoomend','wardogs-field']) if(!v11.includes(s)) throw new Error('Missing V11 feature: '+s);
+          if(!sw.includes('wardogs-field-v11')||!sw.includes('./app-v11.js')||sw.includes('if(u.origin!==self.location.origin)return;')===false) throw new Error('V11 service worker wiring failed');
+          console.log('V11 source wiring PASS');
           NODE
-      - name: Validate map configs and high-resolution Bakurani tile
+      - name: Validate map configs and HD tiles
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
           curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
           node - <<'NODE'
           const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');const n=(x.markers||[]).filter(m=>m.icon==='tower').length;if(!n)throw new Error(id+' no towers');console.log(id,'maxZoom',x.tiles.maxZoom,'towers',n,'metersPerUnit',x.coordinateMetersPerUnit??'n/a')}
+          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' config maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');console.log(id,'maxZoom',x.tiles.maxZoom,'markers',(x.markers||[]).length)}
           NODE
       - name: Validate firing tables
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
           node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
+      - name: Live worker smoke test
+        run: |
+          curl -fsSL --retry 3 https://wardogs-field-assistant2.cloudsoo2004.workers.dev/ -o /tmp/live.html
+          grep -q 'app.js' /tmp/live.html
+          grep -q 'WARDOGS FIELD ASSISTANT' /tmp/live.html
+          echo 'Live worker shell PASS'
