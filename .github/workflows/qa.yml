@@ -31,7 +31,7 @@ jobs:
           const sw=fs.readFileSync('service-worker.js','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
           for(const s of ['app-v11.js','map-v13-style.js','map-v13-fix.js','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
-          for(const s of ['canvas','tileZoom','ancestor','tileUrl','maps/tiles','maxZoom','v13-tower-marker','mapHoverCoord']) if(!v13.includes(s)) throw new Error('Missing V13 feature: '+s);
+          for(const s of ['canvas','tileZoom','ancestor','tileUrl','tilePath','maxZoom','v13-tower-marker','mapHoverCoord']) if(!v13.includes(s)) throw new Error('Missing V13 feature: '+s);
           for(const s of ['v13-map-root','v13-map-canvas','v13-tower-marker','v13-coord-readout']) if(!css.includes(s)) throw new Error('Missing V13 style: '+s);
           if(!sw.includes('wardogs-field-v13')||!sw.includes('./map-v13-style.js')||!sw.includes('./map-v13-fix.js')) throw new Error('V13 service worker wiring failed');
           console.log('V13 source wiring PASS');
