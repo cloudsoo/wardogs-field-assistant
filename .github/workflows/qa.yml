@@ -13,7 +13,7 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V15
+      - name: Syntax check V16
         run: |
           node --check app.js
           node --check app-v11.js
@@ -21,7 +21,7 @@ jobs:
           node --check map-v14-style.js
           node --check map-v14-fix.js
           node --check tests/live-smoke.cjs
-      - name: Validate V15 wiring
+      - name: Validate V16 wiring
         run: |
           node - <<'NODE'
           const fs=require('fs');
@@ -32,14 +32,14 @@ jobs:
           const sw=fs.readFileSync('service-worker.js','utf8');
           const worker=fs.readFileSync('worker.js','utf8');
           const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
-          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          for(const s of ['app-v11.js?v=15','map-v14-style.js?v=15','map-v14-fix.js?v=15','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
-          for(const s of ['canvas','tileZoom','ancestor','tileUrl','tilePath','maxZoom','v14-tower-marker','mapHoverCoord','/tiles/']) if(!v14.includes(s)) throw new Error('Missing V14 feature: '+s);
-          for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout']) if(!css.includes(s)) throw new Error('Missing V14 style: '+s);
-          if(!sw.includes('wardogs-field-v15')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V15 service worker wiring failed');
+          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','fitMap']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
+          for(const s of ['app-v11.js?v=16','map-v14-style.js?v=16','map-v14-fix.js?v=16','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
+          for(const s of ['INITIAL_TILE_ZOOM=4','tileZoom','ancestor','tileUrl','tileBounds','v14-tower-marker','mapHoverCoord','factionLayer','vendorLayer','spawnLayer','doubleclick','pointers']) if(!v14.includes(s)) throw new Error('Missing V16 feature: '+s);
+          for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout','v14-map-tools','v14-fullscreen']) if(!css.includes(s)) throw new Error('Missing V16 style: '+s);
+          if(!sw.includes('wardogs-field-v16')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V16 service worker wiring failed');
           for(const s of ['/^zoom_(\\d+)$/','TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp']) if(!worker.includes(s)) throw new Error('Worker proxy missing: '+s);
           for(const s of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"']) if(!wrangler.includes(s)) throw new Error('Wrangler Worker config missing: '+s);
-          console.log('V15 source wiring PASS');
+          console.log('V16 source wiring PASS');
           NODE
       - name: Validate map configs and source tiles
         run: |
@@ -49,6 +49,7 @@ jobs:
           node - <<'NODE'
           const fs=require('fs');
           for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');if(!x.tiles?.path)throw new Error(id+' has no source tile path');console.log(id,'maxZoom',x.tiles.maxZoom,'tilePath',x.tiles.path)}
+          const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));const towers=b.markers.filter(m=>m.icon==='tower');if(towers.length!==5)throw new Error('Bakurani tower count '+towers.length+' != 5');for(const t of towers)if(!Number.isFinite(t.x)||!Number.isFinite(t.y))throw new Error('invalid tower coord '+t.label);console.log('Bakurani tower coordinate data PASS');
           NODE
       - name: Validate firing tables
         run: |
@@ -63,7 +64,6 @@ jobs:
       - name: Browser E2E on deployed worker
         run: |
           npm install --no-save playwright-core >/dev/null 2>&1
-          npx --yes playwright install ffmpeg >/dev/null 2>&1 || true
           node tests/live-smoke.cjs
       - name: Upload browser recording and screenshots
         if: always()
