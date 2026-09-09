@@ -19,7 +19,10 @@ function boot(){
     e.preventDefault();e.stopImmediatePropagation();
     const c={x:Number(m[1]),y:Number(m[2])};
     if(map.getZoom()<1)map.zoomIn();
-    map.setView(c);
+    const recenter=()=>map.setView(c);
+    recenter();
+    setTimeout(recenter,50);
+    setTimeout(recenter,160);
   },true);
 }
 boot();
