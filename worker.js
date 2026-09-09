@@ -7,15 +7,19 @@ export default {
     if(url.pathname.startsWith('/tiles/')){
       const parts=url.pathname.split('/').filter(Boolean);
       if(parts.length===4){
-        const [,map,zoom,file]=parts;
+        const [,map,zoomPart,file]=parts;
+        const zm=/^zoom_(\d+)$/.exec(zoomPart);
         const match=/^(\d+)_(\d+)\.(webp|png)$/i.exec(file);
-        if(ALLOWED.has(map)&&match&&Number(zoom)>=0&&Number(zoom)<=7){
+        const zoom=zm?Number(zm[1]):-1;
+        if(ALLOWED.has(map)&&match&&zoom>=0&&zoom<=7){
           const upstream=`${TILE_ROOT}${map}/zoom_${zoom}/${file}`;
           const cacheKey=new Request(upstream,{method:'GET'});
-          const cache= caches.default;
-          let cached=await cache.match(cacheKey);
+          const cache=caches.default;
+          const cached=await cache.match(cacheKey);
           if(cached){
-            const h=new Headers(cached.headers);h.set('Access-Control-Allow-Origin','*');h.set('X-Terrain-Proxy','HIT');
+            const h=new Headers(cached.headers);
+            h.set('Access-Control-Allow-Origin','*');
+            h.set('X-Terrain-Proxy','HIT');
             return new Response(cached.body,{status:cached.status,headers:h});
           }
           const res=await fetch(upstream,{cf:{cacheTtl:31536000,cacheEverything:true}});
