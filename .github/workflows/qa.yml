@@ -13,7 +13,7 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V14
+      - name: Syntax check V15
         run: |
           node --check app.js
           node --check app-v11.js
@@ -21,7 +21,7 @@ jobs:
           node --check map-v14-style.js
           node --check map-v14-fix.js
           node --check tests/live-smoke.cjs
-      - name: Validate V14 wiring
+      - name: Validate V15 wiring
         run: |
           node - <<'NODE'
           const fs=require('fs');
@@ -33,13 +33,13 @@ jobs:
           const worker=fs.readFileSync('worker.js','utf8');
           const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          for(const s of ['app-v11.js?v=14','map-v14-style.js?v=14','map-v14-fix.js?v=14','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
+          for(const s of ['app-v11.js?v=15','map-v14-style.js?v=15','map-v14-fix.js?v=15','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
           for(const s of ['canvas','tileZoom','ancestor','tileUrl','tilePath','maxZoom','v14-tower-marker','mapHoverCoord','/tiles/']) if(!v14.includes(s)) throw new Error('Missing V14 feature: '+s);
           for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout']) if(!css.includes(s)) throw new Error('Missing V14 style: '+s);
-          if(!sw.includes('wardogs-field-v14')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V14 service worker wiring failed');
-          for(const s of ['export default','TILE_ROOT','ALLOWED','env.ASSETS.fetch','Content-Type','image/webp']) if(!worker.includes(s)) throw new Error('Worker proxy missing: '+s);
+          if(!sw.includes('wardogs-field-v15')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V15 service worker wiring failed');
+          for(const s of ['/^zoom_(\\d+)$/','TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp']) if(!worker.includes(s)) throw new Error('Worker proxy missing: '+s);
           for(const s of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"']) if(!wrangler.includes(s)) throw new Error('Wrangler Worker config missing: '+s);
-          console.log('V14 source wiring PASS');
+          console.log('V15 source wiring PASS');
           NODE
       - name: Validate map configs and source tiles
         run: |
