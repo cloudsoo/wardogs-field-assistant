@@ -13,28 +13,28 @@ jobs:
           node-version: 22
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V13
+      - name: Syntax check V14
         run: |
           node --check app.js
           node --check app-v11.js
-          node --check map-v13-style.js
-          node --check map-v13-fix.js
+          node --check map-v14-style.js
+          node --check map-v14-fix.js
           node --check tests/live-smoke.cjs
-      - name: Validate V13 wiring
+      - name: Validate V14 wiring
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const boot=fs.readFileSync('app.js','utf8');
-          const v13=fs.readFileSync('map-v13-fix.js','utf8');
-          const css=fs.readFileSync('map-v13-style.js','utf8');
+          const v14=fs.readFileSync('map-v14-fix.js','utf8');
+          const css=fs.readFileSync('map-v14-style.js','utf8');
           const sw=fs.readFileSync('service-worker.js','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','facilityLayer','battleLayer','gridLayer']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          for(const s of ['app-v11.js','map-v13-style.js','map-v13-fix.js','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
-          for(const s of ['canvas','tileZoom','ancestor','tileUrl','tilePath','maxZoom','v13-tower-marker','mapHoverCoord']) if(!v13.includes(s)) throw new Error('Missing V13 feature: '+s);
-          for(const s of ['v13-map-root','v13-map-canvas','v13-tower-marker','v13-coord-readout']) if(!css.includes(s)) throw new Error('Missing V13 style: '+s);
-          if(!sw.includes('wardogs-field-v13')||!sw.includes('./map-v13-style.js')||!sw.includes('./map-v13-fix.js')) throw new Error('V13 service worker wiring failed');
-          console.log('V13 source wiring PASS');
+          for(const s of ['app-v11.js','map-v14-style.js','map-v14-fix.js','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
+          for(const s of ['canvas','tileZoom','ancestor','tileUrl','tilePath','maxZoom','v14-tower-marker','mapHoverCoord']) if(!v14.includes(s)) throw new Error('Missing V14 feature: '+s);
+          for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout']) if(!css.includes(s)) throw new Error('Missing V14 style: '+s);
+          if(!sw.includes('wardogs-field-v14')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V14 service worker wiring failed');
+          console.log('V14 source wiring PASS');
           NODE
       - name: Validate map configs and source tiles
         run: |
@@ -58,6 +58,7 @@ jobs:
       - name: Browser E2E on deployed worker
         run: |
           npm install --no-save playwright-core >/dev/null 2>&1
+          npx --yes playwright install ffmpeg >/dev/null 2>&1 || true
           node tests/live-smoke.cjs
       - name: Upload browser recording and screenshots
         if: always()
