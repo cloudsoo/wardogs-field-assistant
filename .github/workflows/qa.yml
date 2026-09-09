@@ -34,7 +34,7 @@ jobs:
           const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
           for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','fitMap']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
           for(const s of ['app-v11.js?v=16','map-v14-style.js?v=16','map-v14-fix.js?v=16','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
-          for(const s of ['INITIAL_TILE_ZOOM=4','tileZoom','ancestor','tileUrl','tileBounds','v14-tower-marker','mapHoverCoord','factionLayer','vendorLayer','spawnLayer','doubleclick','pointers']) if(!v14.includes(s)) throw new Error('Missing V16 feature: '+s);
+          for(const s of ['INITIAL_TILE_ZOOM=4','tileZoom','ancestor','tileUrl','tileBounds','v14-tower-marker','mapHoverCoord','factionLayer','vendorLayer','spawnLayer','dblclick','pointers']) if(!v14.includes(s)) throw new Error('Missing V16 feature: '+s);
           for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout','v14-map-tools','v14-fullscreen']) if(!css.includes(s)) throw new Error('Missing V16 style: '+s);
           if(!sw.includes('wardogs-field-v16')||!sw.includes('./map-v14-style.js')||!sw.includes('./map-v14-fix.js')) throw new Error('V16 service worker wiring failed');
           for(const s of ['/^zoom_(\\d+)$/','TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp']) if(!worker.includes(s)) throw new Error('Worker proxy missing: '+s);
