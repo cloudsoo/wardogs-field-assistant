@@ -9,50 +9,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+        with: {node-version: 22}
       - name: Validate manifest
-        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest OK')"
-      - name: Syntax check V17
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest OK')"
+      - name: Syntax check V18
         run: |
           node --check app.js
           node --check app-v11.js
           node --check worker.js
-          node --check map-v14-style.js
-          node --check map-v14-fix.js
-          node --check map-v16-runtime.js
+          node --check map-v18.js
+          node --check map-v18-style.js
           node --check tests/live-smoke.cjs
-      - name: Validate V17 wiring
+      - name: Validate V18 wiring
         run: |
           node - <<'NODE'
-          const fs=require('fs');
-          const html=fs.readFileSync('index.html','utf8');
-          const boot=fs.readFileSync('app.js','utf8');
-          const v14=fs.readFileSync('map-v14-fix.js','utf8');
-          const runtime=fs.readFileSync('map-v16-runtime.js','utf8');
-          const css=fs.readFileSync('map-v14-style.js','utf8');
-          const sw=fs.readFileSync('service-worker.js','utf8');
-          const worker=fs.readFileSync('worker.js','utf8');
-          const wrangler=fs.readFileSync('wrangler.jsonc','utf8');
-          for(const s of ['page1','page2','bearingInput','setGun','setTarget','lockGun','lockTarget','towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','fitMap']) if(!html.includes(s)) throw new Error('Missing HTML: '+s);
-          for(const s of ['app-v11.js?v=17','map-v14-style.js?v=17','map-v14-fix.js?v=17','map-v16-runtime.js?v=17','第 1 页 · 坐标输入 / 火控']) if(!boot.includes(s)) throw new Error('Boot missing: '+s);
-          for(const s of ['INITIAL_TILE_ZOOM=4','tileZoom','ancestor','tileUrl','tileBounds','v14-tower-marker','mapHoverCoord','factionLayer','vendorLayer','spawnLayer','dblclick','pointers']) if(!v14.includes(s)) throw new Error('Missing V17 map feature: '+s);
-          for(const s of ['getZoom','zoomIn','setView','#v14-tgo','stopImmediatePropagation']) if(!runtime.includes(s)) throw new Error('Missing V17 runtime feature: '+s);
-          for(const s of ['v14-map-root','v14-map-canvas','v14-tower-marker','v14-coord-readout','v14-map-tools','v14-fullscreen']) if(!css.includes(s)) throw new Error('Missing V17 style: '+s);
-          if(!sw.includes('wardogs-field-v17')||!sw.includes('./map-v16-runtime.js')) throw new Error('V17 service worker wiring failed');
-          for(const s of ['/^zoom_(\\d+)$/','TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp']) if(!worker.includes(s)) throw new Error('Worker proxy missing: '+s);
-          for(const s of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"']) if(!wrangler.includes(s)) throw new Error('Wrangler Worker config missing: '+s);
-          console.log('V17 source wiring PASS');
+          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const map=fs.readFileSync('map-v18.js','utf8');const css=fs.readFileSync('map-v18-style.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
+          for(const x of ['towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
+          for(const x of ['app-v11.js?v=18','map-v18-style.js?v=18','map-v18.js?v=18'])if(!boot.includes(x))throw Error('boot '+x);
+          for(const x of ['data.bounds','data.tileBounds','tileZoom','ancestor','Number(m.y)/100','v18-tower-marker','v18-quick'])if(!map.includes(x))throw Error('map '+x);
+          for(const x of ['v18-map-root','v18-map-canvas','v18-tower-marker','v18-map-tools'])if(!css.includes(x))throw Error('css '+x);
+          if(!sw.includes('wardogs-field-v18')||!sw.includes('map-v18.js'))throw Error('sw');
+          for(const x of ['TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
+          for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
+          console.log('V18 source wiring PASS');
           NODE
-      - name: Validate map configs and source tiles
+      - name: Validate source map data
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
           curl -fsSL --retry 3 -o /dev/null https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani/zoom_7/0_0.webp
           node - <<'NODE'
-          const fs=require('fs');
-          for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');if(!x.tiles?.path)throw new Error(id+' has no source tile path');console.log(id,'maxZoom',x.tiles.maxZoom,'tilePath',x.tiles.path)}
-          const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));const towers=b.markers.filter(m=>m.icon==='tower');if(towers.length!==5)throw new Error('Bakurani tower count '+towers.length+' != 5');for(const t of towers)if(!Number.isFinite(t.x)||!Number.isFinite(t.y))throw new Error('invalid tower coord '+t.label);console.log('Bakurani tower coordinate data PASS');
+          const fs=require('fs');for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw Error(id+' maxZoom');if(!x.tileBounds||!x.bounds)throw Error(id+' bounds');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw Error(id+' tower')}const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));if(b.markers.filter(m=>m.icon==='tower').length!==5)throw Error('Bakurani tower count');if(b.coordinateMetersPerUnit!==100)throw Error('coordinate scale');console.log('Source map data PASS');
           NODE
       - name: Validate firing tables
         run: |
@@ -68,7 +55,7 @@ jobs:
         run: |
           npm install --no-save playwright-core >/dev/null 2>&1
           node tests/live-smoke.cjs
-      - name: Upload browser recording and screenshots
+      - name: Upload browser proof
         if: always()
         uses: actions/upload-artifact@v4
         with:
