@@ -9,7 +9,7 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
 (async()=>{
   fs.mkdirSync('test-artifacts',{recursive:true});
   const browser=await chromium.launch({headless:true,executablePath:browserPath(),args:['--disable-dev-shm-usage']});
-  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',recordVideo:{dir:'test-artifacts',size:{width:390,height:844}}});
+  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1'});
   const page=await context.newPage(); page.setDefaultTimeout(20000); const errors=[]; const tileResponses=[];
   page.on('pageerror',e=>errors.push(String(e))); page.on('response',r=>{if(r.url().includes('/tiles/'))tileResponses.push({url:r.url(),status:r.status()})});
   const probe=await context.request.get(PROXY_TILE); assert.equal(probe.status(),200,'same-origin terrain proxy did not return 200'); assert.match(probe.headers()['content-type']||'',/image\/webp/i,'proxy content type is not webp');
@@ -19,7 +19,7 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   assert.ok(tileResponses.some(x=>x.status===200),'browser did not load a successful same-origin terrain tile'); assert.ok(tileResponses.some(x=>x.status===200&&x.url.includes('/zoom_4/')),'initial map did not request the sharp zoom_4 LOD');
   assert.equal(await page.locator('#v14-quick').count(),1,'quick controls must exist exactly once'); assert.equal(await page.locator('.v11-quick,.v11-coord').count(),0,'legacy duplicate quick controls remain');
   assert.equal(await page.locator('.v14-tower-marker').count(),5,'Bakurani must show exactly five towers');
-  for(const t of expectedTowers){const c=await page.locator(`.v14-tower-marker[title^="${t.label}"]`).count();assert.equal(c,1,`missing tower marker ${t.label}`)}
+  for(const t of expectedTowers)assert.equal(await page.locator(`.v14-tower-marker[title^="${t.label}"]`).count(),1,`missing tower marker ${t.label}`);
   await page.screenshot({path:'test-artifacts/map-loaded.png',fullPage:false});
   const mapBox=await page.locator('#map').boundingBox(); assert.ok(mapBox,'map bounds missing');
   const towers=await page.locator('.v14-tower-marker').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})); for(const p of towers){assert.ok(p.x>mapBox.x-10&&p.x<mapBox.x+mapBox.width+10,'tower X position is outside map');assert.ok(p.y>mapBox.y-10&&p.y<mapBox.y+mapBox.height+10,'tower Y position is outside map')}
