@@ -15,7 +15,7 @@ function resize(){q.dpr=Math.max(1,Math.min(2,devicePixelRatio||1));const w=host
 function view(){const W=host.clientWidth,H=host.clientHeight,bw=q.view.maxX-q.view.minX,bh=q.view.maxY-q.view.minY,pad=12,base=Math.min(Math.max(1,(W-pad*2)/bw),Math.max(1,(H-pad*2)/bh)),scale=base*2**q.zoom,mw=bw*scale,mh=bh*scale;return{scale,mw,mh,left:(W-mw)/2+q.panX,top:(H-mh)/2+q.panY,bounds:q.view}}
 function w2s(x,y){const v=view();return{x:v.left+(x-v.bounds.minX)*v.scale,y:v.top+(v.bounds.maxY-y)*v.scale}}
 function s2w(x,y){const v=view();return{x:v.bounds.minX+(x-v.left)/v.scale,y:v.bounds.maxY-(y-v.top)/v.scale}}
-function clampPan(){const v=view(),W=host.clientWidth,H=host.clientHeight;q.panX=v.mw<=W?0:Math.max(W-v.mw,Math.min(0,q.panX));q.panY=v.mh<=H?0:Math.max(H-v.mh,Math.min(0,q.panY))}
+function clampPan(){const v=view(),W=host.clientWidth,H=host.clientHeight;const maxX=Math.max(0,(v.mw-W)/2),maxY=Math.max(0,(v.mh-H)/2);q.panX=Math.max(-maxX,Math.min(maxX,q.panX));q.panY=Math.max(-maxY,Math.min(maxY,q.panY))}
 function tileZoom(){const v=view(),world=q.tile.maxX-q.tile.minX,base=q.tiles.tileSize/world,raw=Math.log2(v.scale/base);return Math.max(q.tiles.minZoom,Math.min(q.tiles.maxZoom,Math.round(raw)))}
 function key(z,x,y){return `${id}:${z}:${x}:${y}`}
 function loadTile(z,x,y){if(x<0||y<0||x>=2**z||y>=2**z)return null;const k=key(z,x,y);let t=TILE_CACHE.get(k);if(t)return t;t={img:new Image(),loaded:false,failed:false};TILE_CACHE.set(k,t);t.img.decoding='async';t.img.onload=()=>{t.loaded=true;q.loadOk++;window.__wardogsTerrainOk=true;draw()};t.img.onerror=()=>{t.failed=true;draw()};t.img.src=`${TILE_ROOT}${id}/zoom_${z}/${x}_${y}.${q.tiles.extension}`;return t}
