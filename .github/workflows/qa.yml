@@ -40,7 +40,7 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
-          curl -fsSL --retry 3 -o /dev/null https://cdn.jsdelivr.net/gh/apollyon-sys/wardogs-calculator@main/maps/tiles/bakurani/zoom_7/0_0.webp
+          curl -fsSL --retry 3 -o /dev/null https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani/zoom_7/0_0.webp
           node - <<'NODE'
           const fs=require('fs');
           for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw new Error(id+' maxZoom < 7');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw new Error(id+' has no tower markers');if(!x.tiles?.path)throw new Error(id+' has no source tile path');console.log(id,'maxZoom',x.tiles.maxZoom,'tilePath',x.tiles.path)}
