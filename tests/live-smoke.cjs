@@ -24,11 +24,13 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   await page.waitForSelector('canvas.v14-map-canvas');
   await page.waitForFunction(()=>document.querySelectorAll('.v14-tower-marker').length>0,'tower markers did not load');
   await page.waitForFunction(()=>tileResponsesCount()>0,'no map tile request observed');
+  await page.waitForFunction(()=>tileResponses.some(x=>x.status===200),'initial terrain tile did not load successfully');
   await page.waitForFunction(()=>window.Wardogs11.canvasMap && window.Wardogs11.canvasMap.getZoom()===0,'map did not start at fit zoom');
-  await page.screenshot({path:'test-artifacts/map-loaded.png',fullPage:false});
-
+  await page.waitForTimeout(500);
   assert.equal(await page.locator('#v14-quick').count(),1,'V14 quick control should exist exactly once');
   assert.equal(await page.locator('.v11-quick,.v11-coord').count(),0,'legacy duplicate quick controls remain');
+  await page.screenshot({path:'test-artifacts/map-loaded.png',fullPage:false});
+
   const mapBox=await page.locator('#map').boundingBox();
   const towerBoxes=await page.locator('.v14-tower-marker').evaluateAll(els=>els.map(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}}));
   assert.ok(mapBox&&towerBoxes.length>=5,'map/tower bounds missing');
@@ -46,7 +48,7 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   const before=await page.locator('.v14-tower-marker').first().locator('img').boundingBox();
   for(let i=0;i<7;i++)await page.locator('#zoomIn').click();
   await page.waitForFunction(()=>window.Wardogs11.canvasMap?.getZoom()===7,'map did not reach max zoom');
-  await page.waitForFunction(()=>tileResponses.some(x=>x.status===200),'no successful map tile response observed');
+  await page.waitForFunction(()=>tileResponses.some(x=>x.status===200),'no successful map tile response observed at high zoom');
   await page.waitForTimeout(500);
   const after=await page.locator('.v14-tower-marker').first().locator('img').boundingBox();
   assert.ok(before&&after,'tower logo bounds missing');
@@ -64,6 +66,5 @@ function browserPath(){for(const p of ['/usr/bin/google-chrome','/usr/bin/google
   console.log('LIVE E2E PASS: V14 terrain tiles, centered tower positions, no duplicate quick controls, coordinate jump, max zoom, compact tower logo, hover grid ref');
   await context.close();
   await browser.close();
-
   function tileResponsesCount(){return tileResponses.length}
 })().catch(err=>{console.error(err.stack||err);process.exit(1)});
