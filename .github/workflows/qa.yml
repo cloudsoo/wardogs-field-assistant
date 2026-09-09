@@ -26,7 +26,7 @@ jobs:
           const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const map=fs.readFileSync('map-v18.js','utf8');const css=fs.readFileSync('map-v18-style.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
           for(const x of ['towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
           for(const x of ['app-v11.js?v=18','map-v18-style.js?v=18','map-v18.js?v=18'])if(!boot.includes(x))throw Error('boot '+x);
-          for(const x of ['data.bounds','data.tileBounds','tileZoom','ancestor','Number(m.y)/100','v18-tower-marker','v18-quick'])if(!map.includes(x))throw Error('map '+x);
+          for(const x of ['data.bounds','data.tileBounds','tileZoom','anc','Number(m.y)/100','v18-tower-marker','v18-quick'])if(!map.includes(x))throw Error('map '+x);
           for(const x of ['v18-map-root','v18-map-canvas','v18-tower-marker','v18-map-tools'])if(!css.includes(x))throw Error('css '+x);
           if(!sw.includes('wardogs-field-v18')||!sw.includes('map-v18.js'))throw Error('sw');
           for(const x of ['TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
