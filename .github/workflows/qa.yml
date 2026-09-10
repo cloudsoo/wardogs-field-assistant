@@ -12,29 +12,31 @@ jobs:
         with: {node-version: 22}
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest OK')"
-      - name: Syntax check V26
+      - name: Syntax check V27
         run: |
           node --check app.js
           node --check app-v19.js
           node --check worker.js
           node --check map-v22.js
           node --check map-v22-fix.js
+          node --check map-v27-fix.js
           node --check tests/live-smoke.cjs
           node --check tests/map-interaction-smoke.cjs
-      - name: Validate V26 wiring
+      - name: Validate V27 wiring
         run: |
           node - <<'NODE'
-          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v22.js','utf8');const fix=fs.readFileSync('map-v22-fix.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');const it=fs.readFileSync('tests/map-interaction-smoke.cjs','utf8');
+          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v22.js','utf8');const fix=fs.readFileSync('map-v22-fix.js','utf8');const v27=fs.readFileSync('map-v27-fix.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');const it=fs.readFileSync('tests/map-interaction-smoke.cjs','utf8');
           for(const x of ['towerLayer','inactiveTowerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
-          for(const x of ['app-v19.js?v=26','map-v22.js?v=26','map-v22-fix.js?v=26'])if(!boot.includes(x))throw Error('boot '+x);
+          for(const x of ['app-v19.js?v=27','map-v22.js?v=27','map-v22-fix.js?v=27','map-v27-fix.js?v=27'])if(!boot.includes(x))throw Error('boot '+x);
           for(const x of ['state.lang','wardogs:i18n','setMode','window.Wardogs19'])if(!core.includes(x))throw Error('core '+x);
           for(const x of ['index.json','tileBounds','inactive_tower','v22-tower','v22-quick','v22-x','v22-y','setGun','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
           for(const x of ['wheel','pointerdown','pointermove','pointerup','getMap','MAX=7','elementFromPoint'])if(!fix.includes(x))throw Error('interaction fix '+x);
-          for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','scrollIntoViewIfNeeded','inactiveTowerLayer','weapon'])if(!it.includes(x))throw Error('interaction QA '+x);
-          if(!sw.includes('wardogs-field-v26')||!sw.includes('./map-v22-fix.js'))throw Error('service worker');
+          for(const x of ['towerGo','v22-tower','target','canvas.width','normalizeCanvas','pointerdown','pointermove','wardogs:i18n'])if(!v27.includes(x))throw Error('V27 fix '+x);
+          for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','scrollIntoViewIfNeeded','inactiveTowerLayer','weapon','deviceScaleFactor:3'])if(!it.includes(x))throw Error('interaction QA '+x);
+          if(!sw.includes('wardogs-field-v27')||!sw.includes('./map-v27-fix.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
-          console.log('V26 source wiring PASS');
+          console.log('V27 source wiring PASS');
           NODE
       - name: Validate current map registry and exact source data
         run: |
@@ -55,16 +57,17 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
           node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
-      - name: Wait for live V26 deployment
+      - name: Wait for live V27 deployment
         run: |
           for i in $(seq 1 36); do
-            app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=26' || true)
-            map=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22.js?v=26' || true)
-            fix=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22-fix.js?v=26' || true)
-            if echo "$app" | grep -q 'map-v22.js?v=26' && echo "$fix" | grep -q 'elementFromPoint'; then echo 'Live V26 deployment PASS'; exit 0; fi
+            app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=27' || true)
+            map=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22.js?v=27' || true)
+            fix=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22-fix.js?v=27' || true)
+            v27=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v27-fix.js?v=27' || true)
+            if echo "$app" | grep -q 'map-v27-fix.js?v=27' && echo "$v27" | grep -q 'normalizeCanvas'; then echo 'Live V27 deployment PASS'; exit 0; fi
             echo "Waiting for Cloudflare deployment... attempt $i/36"; sleep 5
           done
-          echo 'Live V26 deployment did not become active in time'; exit 1
+          echo 'Live V27 deployment did not become active in time'; exit 1
       - name: Live worker shell smoke test
         run: |
           curl -fsSL --retry 3 https://wardogs-field-assistant2.cloudsoo2004.workers.dev/ -o /tmp/live.html
