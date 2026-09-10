@@ -31,8 +31,7 @@ jobs:
           for(const x of ['index.json','tileBounds','inactive_tower','v22-tower','v22-quick','v22-x','v22-y','setGun','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
           for(const x of ['wheel','pointerdown','pointermove','pointerup','getMap','MAX=7'])if(!fix.includes(x))throw Error('interaction fix '+x);
           for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','inactiveTowerLayer','weapon'])if(!it.includes(x))throw Error('interaction QA '+x);
-          if(!sw.includes('wardogs-field-v24'))throw Error('service worker cache');
-          if(!sw.includes('./map-v22-fix.js'))throw Error('service worker fix asset');
+          if(!sw.includes('wardogs-field-v24')||!sw.includes('./map-v22-fix.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
           console.log('V24 source wiring PASS');
@@ -72,13 +71,14 @@ jobs:
           grep -q 'app.js' /tmp/live.html
           grep -q 'WARDOGS FIELD ASSISTANT' /tmp/live.html
           echo 'Live worker shell PASS'
+      - name: Install Playwright runtime + ffmpeg
+        run: |
+          npm install --no-save playwright playwright-core >/dev/null 2>&1
+          npx playwright install ffmpeg
       - name: Browser E2E on deployed worker
-        run: |
-          npm install --no-save playwright-core >/dev/null 2>&1
-          node tests/live-smoke.cjs
+        run: node tests/live-smoke.cjs
       - name: Real map interaction E2E + video proof
-        run: |
-          node tests/map-interaction-smoke.cjs
+        run: node tests/map-interaction-smoke.cjs
       - name: Upload browser proof
         if: always()
         uses: actions/upload-artifact@v4
