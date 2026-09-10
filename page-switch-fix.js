@@ -4,12 +4,12 @@ if(window.__WARDOGS_PAGE_SWITCH_FIX__)return;
 window.__WARDOGS_PAGE_SWITCH_FIX__=true;
 const $=id=>document.getElementById(id);
 const state=()=>window.Wardogs19||window.Wardogs11;
-function activePage2(){return $('page2')?.classList.contains('active')===true}
 function repair(pass=0){
-  if(!activePage2())return;
-  const s=state(),m=s?.map,h=$('map');if(!m||!h)return;
+  const page2=$('page2'),h=$('map');
+  if(!page2?.classList.contains('active')||!h)return;
+  const s=state(),m=s?.map;if(!m)return;
   const rect=h.getBoundingClientRect();
-  if(rect.width<2||rect.height<2){if(pass<8)setTimeout(()=>repair(pass+1),40);return}
+  if(rect.width<2||rect.height<2){if(pass<6)setTimeout(()=>repair(pass+1),80);return}
   try{m.resize?.()}catch{}
   const c=h.querySelector('.v22-canvas');
   if(c){
@@ -24,14 +24,10 @@ function repair(pass=0){
     q.zoom=Math.max(0,Math.min(7,Number.isFinite(q.zoom)?q.zoom:0));
     m.refresh?.();
   }
-  if(pass<3){requestAnimationFrame(()=>repair(pass+1));setTimeout(()=>repair(pass+1),120)}
 }
-function schedule(){repair(0);setTimeout(()=>repair(1),30);setTimeout(()=>repair(2),160);setTimeout(()=>repair(3),420)}
-const nav2=$('nav2'),nav1=$('nav1');
-nav2?.addEventListener('click',()=>schedule(),false);
-nav1?.addEventListener('click',()=>setTimeout(()=>{const s=state();try{s?.map?.resize?.()}catch{}},0),false);
-new MutationObserver(()=>{if(activePage2())schedule()}).observe($('page2')||document.body,{attributes:true,attributeFilter:['class']});
-window.addEventListener('resize',()=>{if(activePage2())schedule()},{passive:true});
-window.addEventListener('orientationchange',()=>{if(activePage2())schedule()},{passive:true});
-schedule();
+function schedule(){setTimeout(()=>repair(),80);setTimeout(()=>repair(),320)}
+$('nav2')?.addEventListener('click',schedule,false);
+$('nav1')?.addEventListener('click',()=>setTimeout(()=>{try{state()?.map?.resize?.()}catch{}},0),false);
+window.addEventListener('resize',()=>{$('page2')?.classList.contains('active')&&schedule()},{passive:true});
+window.addEventListener('orientationchange',()=>{$('page2')?.classList.contains('active')&&schedule()},{passive:true});
 })();
