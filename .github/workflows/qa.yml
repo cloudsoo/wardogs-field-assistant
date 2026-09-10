@@ -51,6 +51,15 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
           node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
+      - name: Wait for live V22 deployment
+        run: |
+          for i in $(seq 1 36); do
+            app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=22' || true)
+            map=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22.js?v=22' || true)
+            if echo "$app" | grep -q 'map-v22.js?v=22' && echo "$map" | grep -q 'v22-tower'; then echo 'Live V22 deployment PASS'; exit 0; fi
+            echo "Waiting for Cloudflare deployment... attempt $i/36"; sleep 5
+          done
+          echo 'Live V22 deployment did not become active in time'; exit 1
       - name: Live worker shell smoke test
         run: |
           curl -fsSL --retry 3 https://wardogs-field-assistant2.cloudsoo2004.workers.dev/ -o /tmp/live.html
