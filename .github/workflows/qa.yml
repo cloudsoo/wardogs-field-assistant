@@ -12,7 +12,7 @@ jobs:
         with: {node-version: 22}
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest OK')"
-      - name: Syntax check V29
+      - name: Syntax check V31
         run: |
           node --check app.js
           node --check app-v19.js
@@ -20,23 +20,25 @@ jobs:
           node --check map-v22.js
           node --check map-v22-fix.js
           node --check map-v27-fix.js
+          node --check field-enhance-v31.js
           node --check tests/live-smoke.cjs
           node --check tests/map-interaction-smoke.cjs
-      - name: Validate V29 wiring
+      - name: Validate V31 wiring
         run: |
           node - <<'NODE'
-          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v22.js','utf8');const fix=fs.readFileSync('map-v22-fix.js','utf8');const v27=fs.readFileSync('map-v27-fix.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');const it=fs.readFileSync('tests/map-interaction-smoke.cjs','utf8');
+          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v22.js','utf8');const fix=fs.readFileSync('map-v22-fix.js','utf8');const v27=fs.readFileSync('map-v27-fix.js','utf8');const enh=fs.readFileSync('field-enhance-v31.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');const it=fs.readFileSync('tests/map-interaction-smoke.cjs','utf8');
           for(const x of ['towerLayer','inactiveTowerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
-          for(const x of ['app-v19.js?v=29','map-v22.js?v=29','map-v22-fix.js?v=29','map-v27-fix.js?v=29'])if(!boot.includes(x))throw Error('boot '+x);
+          for(const x of ['app-v19.js?v=31','map-v22.js?v=31','map-v22-fix.js?v=31','map-v27-fix.js?v=31','field-enhance-v31.js?v=31'])if(!boot.includes(x))throw Error('boot '+x);
           for(const x of ['state.lang','wardogs:i18n','setMode','window.Wardogs19'])if(!core.includes(x))throw Error('core '+x);
           for(const x of ['index.json','tileBounds','inactive_tower','v22-tower','v22-quick','v22-x','v22-y','setGun','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
           for(const x of ['wheel','pointerdown','pointermove','pointerup','getMap','MAX=7','elementFromPoint'])if(!fix.includes(x))throw Error('interaction fix '+x);
-          for(const x of ['towerGo','v22-tower','target','canvas.width','normalizeCanvas','pointerdown','pointermove','wardogs:i18n','mousedown','mousemove','mouseup'])if(!v27.includes(x))throw Error('V29 fix '+x);
+          for(const x of ['towerGo','v22-tower','target','canvas.width','normalizeCanvas','pointerdown','pointermove','wardogs:i18n','mousedown','mousemove','mouseup','zoomAt','lastFocus'])if(!v27.includes(x))throw Error('V31 fix '+x);
+          for(const x of ['v31-range','maxRangeKm','minRangeKm','v31-solution','Terrain3D','.v22-point'])if(!enh.includes(x))throw Error('field enhancement '+x);
           for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','scrollIntoViewIfNeeded','inactiveTowerLayer','weapon','deviceScaleFactor'])if(!it.includes(x))throw Error('interaction QA '+x);
-          if(!sw.includes('wardogs-field-v29')||!sw.includes('./map-v27-fix.js'))throw Error('service worker');
+          if(!sw.includes('wardogs-field-v31')||!sw.includes('./field-enhance-v31.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
-          console.log('V29 source wiring PASS');
+          console.log('V31 source wiring PASS');
           NODE
       - name: Validate current map registry and exact source data
         run: |
@@ -56,16 +58,21 @@ jobs:
       - name: Validate firing tables
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
-          node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);console.log('Firing tables PASS')"
-      - name: Wait for live V29 deployment
+          node -e "const x=require('/tmp/weapons.json');if(!x.weapons.some(w=>w.id==='mortar')||!x.weapons.some(w=>w.id==='spg'))process.exit(1);for(const w of x.weapons){if(!Number.isFinite(w.minRangeKm)||!Number.isFinite(w.maxRangeKm))process.exit(1)}console.log('Firing tables + range metadata PASS')"
+      - name: Validate terrain context source
+        run: |
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/ballistics/terrain-context.json -o /tmp/terrain-context.json
+          node -e "const x=require('/tmp/terrain-context.json');if(x.experimentalCorrection?.available!==true||x.releasePolicy?.automaticMilCorrection!==false)process.exit(1);console.log('Terrain context policy PASS')"
+      - name: Wait for live V31 deployment
         run: |
           for i in $(seq 1 36); do
-            app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=29' || true)
-            v27=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v27-fix.js?v=29' || true)
-            if echo "$app" | grep -q 'map-v27-fix.js?v=29' && echo "$v27" | grep -q 'normalizeCanvas'; then echo 'Live V29 deployment PASS'; exit 0; fi
+            app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=31' || true)
+            v27=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v27-fix.js?v=31' || true)
+            enh=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/field-enhance-v31.js?v=31' || true)
+            if echo "$app" | grep -q 'field-enhance-v31.js?v=31' && echo "$v27" | grep -q 'zoomAt' && echo "$enh" | grep -q 'v31-range'; then echo 'Live V31 deployment PASS'; exit 0; fi
             echo "Waiting for Cloudflare deployment... attempt $i/36"; sleep 5
           done
-          echo 'Live V29 deployment did not become active in time'; exit 1
+          echo 'Live V31 deployment did not become active in time'; exit 1
       - name: Live worker shell smoke test
         run: |
           curl -fsSL --retry 3 https://wardogs-field-assistant2.cloudsoo2004.workers.dev/ -o /tmp/live.html
