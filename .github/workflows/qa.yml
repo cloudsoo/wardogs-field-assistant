@@ -12,25 +12,25 @@ jobs:
         with: {node-version: 22}
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest OK')"
-      - name: Syntax check V20
+      - name: Syntax check V21
         run: |
           node --check app.js
           node --check app-v19.js
           node --check worker.js
-          node --check map-v20.js
+          node --check map-v21.js
           node --check tests/live-smoke.cjs
-      - name: Validate V20 wiring
+      - name: Validate V21 wiring
         run: |
           node - <<'NODE'
-          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v20.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
+          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v21.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
           for(const x of ['towerLayer','inactiveTowerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
-          for(const x of ['app-v19.js?v=20','map-v20.js?v=20'])if(!boot.includes(x))throw Error('boot '+x);
+          for(const x of ['app-v19.js?v=21','map-v21.js?v=21'])if(!boot.includes(x))throw Error('boot '+x);
           for(const x of ['state.lang','wardogs:i18n','setMode','window.Wardogs19'])if(!core.includes(x))throw Error('core '+x);
-          for(const x of ['maps/index.json','tileBounds','inactive_tower','active===false','v20-tower','v20-quick','v20-x','v20-y','setGunFromTower'])if(!map.includes(x))throw Error('map '+x);
-          if(!sw.includes('wardogs-field-v20')||!sw.includes('./map-v20.js'))throw Error('service worker');
+          for(const x of ['maps/index.json','tileBounds','inactive_tower','active===false','v21-tower','v21-quick','v21-x','v21-y','setGunFromTower','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
+          if(!sw.includes('wardogs-field-v21')||!sw.includes('./map-v21.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
-          console.log('V20 source wiring PASS');
+          console.log('V21 source wiring PASS');
           NODE
       - name: Validate current map registry and exact source data
         run: |
@@ -40,13 +40,12 @@ jobs:
           NODE
           for id in bakurani ozeti zestafona; do curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/$id.json -o /tmp/$id.json; done
           node - <<'NODE'
-          const fs=require('fs');for(const id of ['bakurani','ozeti','zestafona']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if(!x.bounds||!x.tileBounds||x.tiles?.maxZoom<7)throw Error(id+' bounds/zoom');if(x.coordinateMetersPerUnit!==100)throw Error(id+' scale');const t=x.markers.filter(m=>m.icon==='tower');console.log(id,'towers',t.length,'bounds',x.bounds)}const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));if(b.markers.filter(m=>m.icon==='tower').length!==5)throw Error('Bakurani tower count');const o=JSON.parse(fs.readFileSync('/tmp/ozeti.json'));if(o.markers.filter(m=>m.icon==='tower').length!==4)throw Error('Ozeti tower count');const v=o.markers.find(m=>m.icon==='valkyra');if(!v||Number(v.x)/100!==118.75||Number(v.y)/100!==70.93)throw Error('Ozeti Valkyra coordinate mismatch');console.log('Current source map data PASS');
+          const fs=require('fs');for(const id of ['bakurani','ozeti','zestafona']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if(!x.bounds||!x.tileBounds||x.tiles?.maxZoom<7)throw Error(id+' bounds/zoom');if(x.coordinateMetersPerUnit!==100)throw Error(id+' scale');if(!Array.isArray(x.markers))throw Error(id+' markers');console.log(id,'towers',x.markers.filter(m=>m.icon==='tower').length)}const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));if(b.markers.filter(m=>m.icon==='tower').length!==5)throw Error('Bakurani tower count');if(JSON.stringify(b.markers.filter(m=>m.icon==='tower').map(m=>[m.label,Number(m.x)/100,Number(m.y)/100]).sort())!==JSON.stringify([['Tower 1',80.52,69.85],['Tower 2',77.19,70],['Tower 3',77.19,73.44],['Tower 4',83.64,72.85],['Tower 5',82.22,68.41]].sort()))throw Error('Bakurani coordinates mismatch');const o=JSON.parse(fs.readFileSync('/tmp/ozeti.json'));if(o.markers.filter(m=>m.icon==='tower').length!==4)throw Error('Ozeti tower count');const v=o.markers.find(m=>m.icon==='valkyra');if(!v||Number(v.x)/100!==118.75||Number(v.y)/100!==70.93)throw Error('Ozeti Valkyra coordinate mismatch');console.log('Exact source map data PASS');
           NODE
-      - name: Validate HD tile origin and proxy
+      - name: Validate HD tile origin and future-map proxy
         run: |
           curl -fsSL --retry 3 -o /dev/null https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani/zoom_7/0_0.webp
-          curl -fsSL --retry 3 -o /dev/null -w '%{http_code}\n' https://wardogs-field-assistant2.cloudsoo2004.workers.dev/tiles/bakurani/zoom_7/0_0.webp | grep -qx 200
-          curl -fsSL --retry 3 -o /dev/null -w '%{http_code}\n' https://wardogs-field-assistant2.cloudsoo2004.workers.dev/tiles/zestafona/zoom_7/0_0.webp | grep -qx 200
+          for id in bakurani ozeti zestafona; do curl -fsSL --retry 3 -o /dev/null -w '%{http_code}\n' https://wardogs-field-assistant2.cloudsoo2004.workers.dev/tiles/$id/zoom_7/0_0.webp | grep -qx 200; done
           echo 'HD tile origin and future-map proxy PASS'
       - name: Validate firing tables
         run: |
