@@ -12,35 +12,42 @@ jobs:
         with: {node-version: 22}
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'));console.log('manifest OK')"
-      - name: Syntax check V18
+      - name: Syntax check V20
         run: |
           node --check app.js
-          node --check app-v11.js
+          node --check app-v19.js
           node --check worker.js
-          node --check map-v18.js
-          node --check map-v18-style.js
+          node --check map-v20.js
           node --check tests/live-smoke.cjs
-      - name: Validate V18 wiring
+      - name: Validate V20 wiring
         run: |
           node - <<'NODE'
-          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const map=fs.readFileSync('map-v18.js','utf8');const css=fs.readFileSync('map-v18-style.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
-          for(const x of ['towerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
-          for(const x of ['app-v11.js?v=18','map-v18-style.js?v=18','map-v18.js?v=18'])if(!boot.includes(x))throw Error('boot '+x);
-          for(const x of ['data.bounds','data.tileBounds','tileZoom','anc','Number(m.y)/100','v18-tower-marker','v18-quick'])if(!map.includes(x))throw Error('map '+x);
-          for(const x of ['v18-map-root','v18-map-canvas','v18-tower-marker','v18-map-tools'])if(!css.includes(x))throw Error('css '+x);
-          if(!sw.includes('wardogs-field-v18')||!sw.includes('map-v18.js'))throw Error('sw');
-          for(const x of ['TILE_ROOT','ALLOWED','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
+          const fs=require('fs');const html=fs.readFileSync('index.html','utf8');const boot=fs.readFileSync('app.js','utf8');const core=fs.readFileSync('app-v19.js','utf8');const map=fs.readFileSync('map-v20.js','utf8');const sw=fs.readFileSync('service-worker.js','utf8');const worker=fs.readFileSync('worker.js','utf8');const wr=fs.readFileSync('wrangler.jsonc','utf8');
+          for(const x of ['towerLayer','inactiveTowerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
+          for(const x of ['app-v19.js?v=20','map-v20.js?v=20'])if(!boot.includes(x))throw Error('boot '+x);
+          for(const x of ['state.lang','wardogs:i18n','setMode','window.Wardogs19'])if(!core.includes(x))throw Error('core '+x);
+          for(const x of ['maps/index.json','tileBounds','inactive_tower','active===false','v20-tower','v20-quick','v20-x','v20-y','setGunFromTower'])if(!map.includes(x))throw Error('map '+x);
+          if(!sw.includes('wardogs-field-v20')||!sw.includes('./map-v20.js'))throw Error('service worker');
+          for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
-          console.log('V18 source wiring PASS');
+          console.log('V20 source wiring PASS');
           NODE
-      - name: Validate source map data
+      - name: Validate current map registry and exact source data
         run: |
-          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/bakurani.json -o /tmp/bakurani.json
-          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/ozeti.json -o /tmp/ozeti.json
-          curl -fsSL --retry 3 -o /dev/null https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani/zoom_7/0_0.webp
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/index.json -o /tmp/maps-index.json
           node - <<'NODE'
-          const fs=require('fs');for(const id of ['bakurani','ozeti']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if((x.tiles?.maxZoom??0)<7)throw Error(id+' maxZoom');if(!x.tileBounds||!x.bounds)throw Error(id+' bounds');if(!(x.markers||[]).some(m=>m.icon==='tower'))throw Error(id+' tower')}const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));if(b.markers.filter(m=>m.icon==='tower').length!==5)throw Error('Bakurani tower count');if(b.coordinateMetersPerUnit!==100)throw Error('coordinate scale');console.log('Source map data PASS');
+          const fs=require('fs');const a=JSON.parse(fs.readFileSync('/tmp/maps-index.json'));if(!Array.isArray(a)||a.length<3)throw Error('map registry incomplete');console.log('Registry:',a.join(', '));
           NODE
+          for id in bakurani ozeti zestafona; do curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/maps/$id.json -o /tmp/$id.json; done
+          node - <<'NODE'
+          const fs=require('fs');for(const id of ['bakurani','ozeti','zestafona']){const x=JSON.parse(fs.readFileSync('/tmp/'+id+'.json'));if(!x.bounds||!x.tileBounds||x.tiles?.maxZoom<7)throw Error(id+' bounds/zoom');if(x.coordinateMetersPerUnit!==100)throw Error(id+' scale');const t=x.markers.filter(m=>m.icon==='tower');console.log(id,'towers',t.length,'bounds',x.bounds)}const b=JSON.parse(fs.readFileSync('/tmp/bakurani.json'));if(b.markers.filter(m=>m.icon==='tower').length!==5)throw Error('Bakurani tower count');const o=JSON.parse(fs.readFileSync('/tmp/ozeti.json'));if(o.markers.filter(m=>m.icon==='tower').length!==4)throw Error('Ozeti tower count');const v=o.markers.find(m=>m.icon==='valkyra');if(!v||Number(v.x)/100!==118.75||Number(v.y)/100!==70.93)throw Error('Ozeti Valkyra coordinate mismatch');console.log('Current source map data PASS');
+          NODE
+      - name: Validate HD tile origin and proxy
+        run: |
+          curl -fsSL --retry 3 -o /dev/null https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/bakurani/zoom_7/0_0.webp
+          curl -fsSL --retry 3 -o /dev/null -w '%{http_code}\n' https://wardogs-field-assistant2.cloudsoo2004.workers.dev/tiles/bakurani/zoom_7/0_0.webp | grep -qx 200
+          curl -fsSL --retry 3 -o /dev/null -w '%{http_code}\n' https://wardogs-field-assistant2.cloudsoo2004.workers.dev/tiles/zestafona/zoom_7/0_0.webp | grep -qx 200
+          echo 'HD tile origin and future-map proxy PASS'
       - name: Validate firing tables
         run: |
           curl -fsSL --retry 3 https://raw.githubusercontent.com/apollyon-sys/wardogs-calculator/main/data/weapons.json -o /tmp/weapons.json
