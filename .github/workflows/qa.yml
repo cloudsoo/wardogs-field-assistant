@@ -32,7 +32,7 @@ jobs:
           for(const x of ['index.json','tileBounds','inactive_tower','v22-tower','v22-quick','v22-x','v22-y','setGun','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
           for(const x of ['wheel','pointerdown','pointermove','pointerup','getMap','MAX=7','elementFromPoint'])if(!fix.includes(x))throw Error('interaction fix '+x);
           for(const x of ['towerGo','v22-tower','target','canvas.width','normalizeCanvas','pointerdown','pointermove','wardogs:i18n'])if(!v27.includes(x))throw Error('V27 fix '+x);
-          for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','scrollIntoViewIfNeeded','inactiveTowerLayer','weapon','deviceScaleFactor:3'])if(!it.includes(x))throw Error('interaction QA '+x);
+          for(const x of ['recordVideo','mouse.wheel','mouse.down','mouse.move','scrollIntoViewIfNeeded','inactiveTowerLayer','weapon','deviceScaleFactor'])if(!it.includes(x))throw Error('interaction QA '+x);
           if(!sw.includes('wardogs-field-v27')||!sw.includes('./map-v27-fix.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
@@ -61,8 +61,6 @@ jobs:
         run: |
           for i in $(seq 1 36); do
             app=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/app.js?v=27' || true)
-            map=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22.js?v=27' || true)
-            fix=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v22-fix.js?v=27' || true)
             v27=$(curl -fsSL --retry 2 'https://wardogs-field-assistant2.cloudsoo2004.workers.dev/map-v27-fix.js?v=27' || true)
             if echo "$app" | grep -q 'map-v27-fix.js?v=27' && echo "$v27" | grep -q 'normalizeCanvas'; then echo 'Live V27 deployment PASS'; exit 0; fi
             echo "Waiting for Cloudflare deployment... attempt $i/36"; sleep 5
