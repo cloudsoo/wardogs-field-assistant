@@ -26,7 +26,7 @@ jobs:
           for(const x of ['towerLayer','inactiveTowerLayer','factionLayer','vendorLayer','spawnLayer','gridLayer','mapBrightness','fitMap'])if(!html.includes(x))throw Error('HTML '+x);
           for(const x of ['app-v19.js?v=22','map-v22.js?v=22'])if(!boot.includes(x))throw Error('boot '+x);
           for(const x of ['state.lang','wardogs:i18n','setMode','window.Wardogs19'])if(!core.includes(x))throw Error('core '+x);
-          for(const x of ['maps/index.json','tileBounds','inactive_tower','active===false','v22-tower','v22-quick','v22-x','v22-y','setGun','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
+          for(const x of ['index.json','tileBounds','inactive_tower','active(m)','v22-tower','v22-quick','v22-x','v22-y','setGun(c','Math.max(.72'])if(!map.includes(x))throw Error('map '+x);
           if(!sw.includes('wardogs-field-v22')||!sw.includes('./map-v22.js'))throw Error('service worker');
           for(const x of ['TILE_ROOT','SAFE_MAP','env.ASSETS.fetch','image/webp'])if(!worker.includes(x))throw Error('worker '+x);
           for(const x of ['"main": "./worker.js"','"binding": "ASSETS"','"run_worker_first"'])if(!wr.includes(x))throw Error('wrangler '+x);
